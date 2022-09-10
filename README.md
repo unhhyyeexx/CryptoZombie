@@ -629,3 +629,11 @@ function getLastReturnValue() external {
 # If statements
 
 솔리디티에서 if문은 자바스크립트의 if문과 동일하다
+```solidity
+function  eatBLT(string sandwich) public {
+	// 스트링 간의 동일 여부를 판단하기 위해 keccak256해시 함수 이용
+	if (keccak256(sandwich) == keccak256("BLT")) {
+		eat();
+	}
+}
+```
