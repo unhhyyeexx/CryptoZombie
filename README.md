@@ -441,3 +441,191 @@ contract BabyDoge is Doge {
     즉, BabyDoge컨트랙트를 컴파일해서 구축할 때, BabyDoge 컨트랙트가 catchphrase()함수와 anotherCatchphrase()함수에 모두 접근할 수 있다.
     
 - 상속개념은 “고양이는 동물이다” 의 경우처럼 부분집합 클래스가 있을 때 논리적 상속을 위해 활용될 수 있다. 하지만 동일한 로직을 다수의 클래스로 분할해서 단순히 코드를 정리할 때도 활용한다.
+
+# Import
+
+- 다수의 파일이 있고 어떤 파일을 다른 파일로 불러오고 싶을 때, 솔리디티는 import 라는 키워드를 이용한다.
+
+```solidity
+import "./someothercontract.sol";
+
+contract newContract is SomeOtherContract {
+
+}
+```
+
+⇒ 이 컨트랙트와 동일한 폴더(./)에 someothercontract.sol이라는 파일이 있을 때, 이 파일을 컴파일러가 불러오게 된다.
+
+# Storage vs Memory
+
+솔리디티에는 변수를 저장하는 공간으로 storage와 memory 두 공간이 있다.
+
+- **Storage**
+    - 블록체인 상에 영구적으로 저장되는 변수
+- **Memory**
+    - 임시적으로 저장되는 변수로, 컨트랙트 함수에 대한 외부 호출들이 일어나는 사이에 지워진다.
+- 상태변수(함수 외부에 선언된 변수)는 초기 설정상 storage에 선언, 블록체인에 영구적으로 저장
+- 함수 내에 선언된 변수는 memory로 자동 선언, 함수 호출이 종료되면 사라진다.
+- 함수 내의 구조체와 배열을 처리할 때는 사용해야 함
+
+```solidity
+contract SandwichFactory {
+	struct Sandwich {
+		string name;
+		string status;
+	}
+
+	Sandwich[] sandwiches;
+
+	function eatSandwich(uint _index) public {
+		//Sandwich mySandwich = sandwiches[_index];
+		// ^ 꽤 간단해 보이나, 솔리디티는 여기서 
+    // `storage`나 `memory`를 명시적으로 선언해야 한다는 경고 메시지를 발생한다. 
+    // 그러므로 `storage` 키워드를 활용하여 다음과 같이 선언해야 한다:
+		Sandwich storage mySandwich = sandwiches[_index];
+    // ...이 경우, `mySandwich`는 저장된 `sandwiches[_index]`를 가리키는 포인터이다.
+    // 그리고 
+    mySandwich.status = "Eaten!";
+    // ...이 코드는 블록체인 상에서 `sandwiches[_index]`을 영구적으로 변경한다.
+		
+		// 단순히 복사를 하고자 한다면 `memory`를 이용하면 된다: 
+    Sandwich memory anotherSandwich = sandwiches[_index + 1];
+    // ...이 경우, `anotherSandwich`는 단순히 메모리에 데이터를 복사하는 것이 된다. 
+    // 그리고 
+    anotherSandwich.status = "Eaten!";
+    // ...이 코드는 임시 변수인 `anotherSandwich`를 변경하는 것으로 
+    // `sandwiches[_index + 1]`에는 아무런 영향을 끼치지 않는다. 그러나 다음과 같이 코드를 작성할 수 있다: 
+    sandwiches[_index + 1] = anotherSandwich;
+    // ...이는 임시 변경한 내용을 블록체인 저장소에 저장하고자 하는 경우이다.
+  }
+}
+```
+
+# More on Function Visibility
+
+### Internal 과 External
+
+솔리디티에는 public과 private 이외에도 internal과 external이라는 함수 접근 제어자가 있다.
+
+- **internal**
+    - 함수가 정의된 컨트랙트를 상속하는 컨트랙트에서도 접근이 가능하다는 점을 제외하면 private과 동일하다.
+- **external**
+    - 함수가 컨트랙트 바깥에서만 호출될 수 있고, 컨트랙트 내의 다른 함수에 의해 호출될 수 없다는 점을 제외하면 public과 동일하다.
+- 선언은 public, private과 동일
+
+```solidity
+contract Sandwich {
+	uint private snadwichesEaten = 0;
+	
+	function eat() internal {
+		snadwichesEaten++;
+	}
+}
+
+contract BLT is Sandwich {
+	uint private baconSandwichesEaten = 0;
+
+	function eatWithBacon() public returns (string) {
+		baconSandwichesEaten++;
+		// eat 함수가 internal로 선언되었기 때문에 여기서 호출이 가능
+		eat();
+	}
+}
+```
+
+# Interacting with other contracts
+
+> 다른 컨트랙트와 상호작용하기
+> 
+
+블록체인 상에 있으면서 소유하지 않은 컨트랙트와 나의 컨트랙트가 상호작용을 하려면 우선 **인터페이스(interface)**를 정의해야 한다.
+
+```solidity
+contract LuckyNumber {
+	mapping (address => uint) numbers;
+	
+	function setNum(uint _num) public {
+		numbers[msg.sender] = _num;
+	}
+	
+	function getNum(address _myAddress) public view returns (uint) {
+		return numbers[_myAddress];
+	}
+}
+```
+
+- 아무나 자신의 행운의 수를 저장할 수 있는 간단한 컨트랙트
+- 각자의 이더리움 주소와 연관, 이 주소를 이용해서 행운의 수를 찾아볼 수 있다.
+
+getNum함수를 이용해 이 컨트랙트에 있는 데이터를 읽고자 하는 external함수가 있으면, 먼저 LuckyNumber 컨트랙트의 인터페이스를 정의해야 한다.
+
+```solidity
+contract NumberInterface {
+	function getNum(address _myAddress) public view returns (uint);
+}
+```
+
+- 인터페이스를 정의하는 것은 컨트랙트를 정의하는 것과 유사하다
+    - 다른 컨트랙트와 상호작용하고자 하는 함수만을 선언
+    - 다른 함수나 상태 변수를 언급하지는 않는다
+    - 함수 몸체를 정의하지 않는다
+    - 중괄호를 쓰지않고 함수 선언을 세미콜론(;)으로 간단하게 끝낸다.
+    
+
+# Using an Interface
+
+> 인터페이스 활용하기
+> 
+
+```solidity
+contract NumberInterface {
+	function getNum(address _myAddress) public view returns (uint);
+}
+```
+
+위와 같이 인터페이스가 정의되면 다음과 같이 컨트랙트에서 인터페이스를 이용할 수 있다.
+
+```solidity
+contract MyContract {
+	address NumberInterfaceAddress = 0xab38...
+	// ^ 이더리움상의 FavoriteNumber 컨트랙트 주소
+	NumberInterface numberContract = NumberInterface(NumberInterfaceAddress)
+	// 이제 'numberContract'는 다른 컨트랙트를 가르킨다.
+
+	function someFunction() public {
+		// 이제 'numbercontract'가 가리키는 컨트랙트에서 'getNum' 함수를 호출할 수 있다.
+		uint num = numberContract.getNum(msg.sender);
+		// ...그리고 여기서 'num'으로 무언가를 할 수 있음
+```
+
+상호작용하는 함수가 public이나 external로 선언되어 있다면 내 컨트랙트는 이더리움 블록체인 상의 다른 어떤 컨트랙트와도 상호작용할 수 있다.
+
+# Handling Multiple Return Values
+
+> 다수의 반환값 처리하기
+> 
+
+```solidity
+function multipleReturns() internal returns (uint a, uint b, uint c) {
+	return (1, 2, 3);
+}
+
+function processMultipleReturns() external {
+	uint a;
+	uint b;
+	uint c;
+	// 다음과 같이 다수 값을 할당한다
+	(a, b, c) = multipleReturns();
+}
+
+// 혹은 단 하나의 값에만 관심이 있을 경우:
+function getLastReturnValue() external {
+	uint c;
+	// 다른 필드는 빈칸으로 놓기만 하면 된다.
+	(,,c) = multipleReturns();
+}
+```
+
+# If statements
+
+솔리디티에서 if문은 자바스크립트의 if문과 동일하다
