@@ -4,7 +4,7 @@
 
 - 이더리움 애플리케이션의 기본적인 구성 요소로, 솔리디티의 모든 변수와 함수는 어느 한 컨트랙트에 속하게 된다.
 - 예시 ; 비어있는 HelloWorld 컨트랙트
-    
+  
     ```solidity
     contract HelloWorld {
     
@@ -16,7 +16,7 @@
 
 - 해당 코드가 이용해야 하는 솔리디티 버전을 선언하는 것으로 모든 솔리디티 소스 코드는 version pragma로 시작한다.
 - 이후에 새로운 컴파일러 버전이 나와도 기존 코드가 깨지지 않도록 예방
-    
+  
     ```solidity
     pragma solidity ^0.4.19;
     
@@ -59,7 +59,7 @@
 - Modulus /  remainder: x%y
 
 - 지수연산
-    
+  
     ```solidity
     uint x = 5**2; // 즉, 5^2 = 25
     ```
@@ -106,7 +106,7 @@ Person[] people;
 
 - public으로 배열 선언 가능
 - 솔리디티는 이런 배열을 위해 getter메소드를 자동적으로 생성
-    
+  
     ```solidity
     Person[] public people;
     ```
@@ -175,7 +175,7 @@ people.push(Person(16, "Vitalik"));
 - 솔리디티에서 함수는 기본적으로 public 으로 선언된다.
     - 누구나 (혹 다른 어느 컨트랙트가) 컨트랙트의 함수를 호출하고 코드를 실행할 수 있다는 의미
     - 컨트랙트가 공격에 취약해질 수도 있음
-        
+      
         ⇒ 기본적으로 함수를 private으로 선언하고, 공개할 함수만 public으로 선언하는 것이 좋다.
         
 
@@ -240,7 +240,7 @@ function sayHello() public returns (string) {
 스트링에 약간의 변화라도 있으면 해시값은 크게 달라지게 된다.
 
 - 해시함수로 pseudo-random number generator(의사 난수 발생기) 만들기
-    
+  
     ```solidity
     //6e91ec6b618bb462a4a6ee5aa2cb0e9cf30f7a052bb467b0ba58b8748c00d2e5
     keccak256("aaaab");
@@ -350,7 +350,7 @@ return zombieDetails
 - 이더리움 블록체인은 은행 계좌와 같은 계정들(accounts)로 이루어져 있다.
 - 계정은 이더리움 블록체인상의 통화인 Ether의 잔액을 갖고, 계정을 통해 다른 계정과 이더를 주고받을 수 있다.
 - 각 계정은 은행 계좌 번호와 같은 주소(adress)를 가진다. 주소는 특정 계정을 가리키는 고유 식별자로, 다음과 같이 표현한다.
-    
+  
     ```solidity
     0x0cE446255506E92DF41614C46F1d6df9Cc969183
     ```
@@ -378,7 +378,7 @@ mapping (uint => string) userIdToName;
 - 현재 함수를 호출한 유저 (혹은 스마트 컨트랙트)의 주소를 가르킨다.
 - 솔리디티에서 함수 실행은 항상 외부 호출자가 시작한다. 컨트랙트는 누군가가 컨트랙트의 함수를 호출할 때까지 블록체인 상에서 아무런 작업도 하지 않는다 ⇒ 항상 msg.sender필요
 - 예시) msg.sender를 이용하고, mapping을 업데이트
-    
+  
     ```solidity
     mapping (address => uint) favoriteNumber;
     
@@ -437,7 +437,7 @@ contract BabyDoge is Doge {
 ```
 
 - babyDoge 컨트랙트는 Doge컨트랙트를 상속
-    
+  
     즉, BabyDoge컨트랙트를 컴파일해서 구축할 때, BabyDoge 컨트랙트가 catchphrase()함수와 anotherCatchphrase()함수에 모두 접근할 수 있다.
     
 - 상속개념은 “고양이는 동물이다” 의 경우처럼 부분집합 클래스가 있을 때 논리적 상속을 위해 활용될 수 있다. 하지만 동일한 로직을 다수의 클래스로 분할해서 단순히 코드를 정리할 때도 활용한다.
@@ -637,3 +637,349 @@ function  eatBLT(string sandwich) public {
 	}
 }
 ```
+
+
+
+# Immutability of Contracts
+
+> 컨트랙트의 불변성
+
+- 이더리움에 컨트랙트를 배포하고 나면, 컨트랙트는 변하지 않는다.
+  즉, 수정이나 업데이트가 불가능하다.
+- 컨트랙트로 배포한 최초의 코드는 항상 블록체인에 영구적으로 존재하고, 이것이 바로 솔리디티에 있어 보안이 큰 이슈인 이유
+
+### 외부 의존성
+
+만약 DApp에 컨트랙트의 주소를 그대로 가져다 쓴다고 가정해보자.
+
+컨트랙트에 버그가 있다면 DApp을 사용할 수 없을 것이다.
+
+이런 이유로 대개의 경우 DApp의 일부를 수정할 수 있도록 하는 함수를 만들어 두는 것이 합리적
+
+
+
+# Ownable Contract
+
+> 소유가능한 컨트랙트
+
+컨트랙트를 소유가능하게 만들어 보안을 강화시킬 수 있다.
+
+### OpenZeppelin의 Ownable 컨트랙트
+
+- OpenZeppelin 솔리디티 라이브러리에서 가져온 Ownable컨트랙트
+
+  - OpenZeppelin은 DApp에서 사용할 수 있는, 안전하고 커뮤니티에서 검증받은 스마트 컨트랙트의 라이브러리
+
+  ```solidity
+  /**
+   * @title Ownable
+   * @dev The Ownable contract has an owner address, and provides basic authorization control
+   * functions, this simplifies the implementation of "user permissions".
+   */
+  contract Ownable {
+    address public owner;
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  
+    /**
+     * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    function Ownable() public {
+      owner = msg.sender;
+    }
+  
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+      require(msg.sender == owner);
+      _;
+    }
+  
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+      require(newOwner != address(0));
+      OwnershipTransferred(owner, newOwner);
+      owner = newOwner;
+    }
+  }
+  ```
+
+  - 생성자(Constructor) 
+    - `function Ownable()`는 생성자이다.
+    - 컨트랙트와 동일한 이름을 가진, 생략할 수 있는 특별한 함수
+    - 이 함수는 컨트랙트가 생성될 때 딱 한 번만 실행된다.
+  - 함수 제어자 (Function Modifier)
+    - `modifier onlyOwner()`.
+    - 제어자는 다른 함수들에 대한 접근을 제어하기 위해 사용되는 일종의 유사 함수
+    - 보통 함수 실행 전의 요구사항 충족 여부를 확인하는데 사용
+    - `onlyOwner`의 경우 접근을 제한해서 오직 컨트랙트의 소유자만 해당 함수를 실행할 수 있도록 하기 위해 사용될 수 있다.
+
+- 즉, Ownable컨트랙트는 기본적으로 
+
+  1. 컨트랙트가 생성되면 컨트랙트의 생성자가 owner에 msg.sender(컨트랙트를 배포한 사람)를 대입
+  2. 특정한 함수들에 대해서 오직 소유자만 접근할 수 있도록 제한 가능한 onlyOwner제어자를 추가
+  3. 새로운 소유자에게 해당 컨트랙트의 소유권을 옮길 수 있도록 함
+
+- onlyOwner는 컨트랙트에 흔히 쓰이는 제어자. 대부분의 솔리디티 DApp들은 Ownble컨트랙트를 복붙하면서 시작한다. 그리고 첫 컨트랙트는 이 컨트랙트를 상속해서 만듬.
+
+
+
+# onlyOwner Function Modifier
+
+> onlyOwner 함수 제어자
+
+일단, 
+
+```solidity
+ZombieFeeding is ZombieFactory
+ZombieFactory is Ownable
+```
+
+이므로, ZombieFeeding 또한 Ownable이고, Ownable 컨트랙트의 함수, 이벤트, 제어자에 접근 가능
+
+### 함수 제어자
+
+- 함수 제어자는 함수처럼 보이지만, function키워드 대신 modifier 키워드를 사용
+- 함수 호출하듯이 직접 호출 불가능
+- 대신 함수 정의부 끝에 해당 함수의 작동 방식을 바꾸도록 제어자의 이름을 붙일 수 있다.
+
+```solidity
+/**
+ * @dev Throws if called by any account other than the owner.
+ */
+modifier onlyOwner() {
+  require(msg.sender == owner);
+  _;
+}
+```
+
+이 제어자를 다음과 같이 사용 가능
+
+```solidity
+contract MyContract is Ownable {
+  event LaughManiacally(string laughter);
+
+  // 아래 `onlyOwner`의 사용 방법 주목:
+  function likeABoss() external onlyOwner {
+    LaughManiacally("Muahahahaha");
+  }
+}
+```
+
+- `likeABoss` 함수의 `onlyOwner` 제어자 부분을 보면, 
+  `likeABoss` 함수를 호출하면, `onlyOwner`의 코드가 **먼저** 실행
+  그리고 `onlyOwner`의 `_;` 부분을 `likeABoss` 함수로 되돌아가 해당 코드를 실행
+- 제어자를 사용하는 방법중 가장 일반정으로 쓰는 방법은 함수 실행 전에 `require` 체크를 넣는 것
+- `onlyOwner`의 경우에는, 함수에 이 제어자를 추가하면 **오직** 컨트랙트의 **소유자**(배포자)만이 해당 함수를 호출할 수 있다.
+
+
+
+# Gas
+
+### Gas - the fuel Ethereum DApps run on
+
+- 솔리디티에서는 사용자들이 DApp의 함수를 실행시킬 때마다 '가스'라고 부리는 화폐를 지불해야 한다.
+- 사용자는 이더를 이용해서 가스를 구매하기 때문에 DApp함수를 실행하려면 유저들은 이더를 소모
+- 함수의 로직이 얼마나 복잡한지에 따라 가스소모량이 달라진다.
+  각각의 연산은 소모되는 gas cost가 있고, 그 연산을 수행하는 데 소모되는 컴퓨팅 자원의 양이 이 비용 결정
+
+### Why is gas necessary?
+
+- 유저가 어떤 함수를 실행할 때, 이더리움 네트워크상의 모든 개별 노드가 함수의 출력값을 검증하기 위해 그 함수를 실행한다.
+- 모든 함수의 실행을 검증하는 수천 개의 노드가 바로 이더리움을 분산화하고 데이터를 보존하며 누군가 검열할 수 없도록 하는 요소이다.
+- 연산처리에 비용을 쓰고, 저장 공간 뿐만 아니라 연산 사용 시간에 따라서도 비용을 지불해야 하므로 안전성 높아짐
+
+### Struct packing to save gas
+
+```solidity
+struct NormalStruct {
+  uint a;
+  uint b;
+  uint c;
+}
+
+struct MiniMe {
+  uint32 a;
+  uint32 b;
+  uint c;
+}
+
+// `mini`는 구조체 압축을 했기 때문에 `normal`보다 가스를 조금 사용.
+NormalStruct normal = NormalStruct(10, 20, 30);
+MiniMe mini = MiniMe(10, 20, 30); 
+```
+
+- 가스를 아끼기 위해 구조체 안에서는 가능한 한 작은 크기의 정수타입을 쓰는 것이 좋다.
+- 또한 동일한 데이터 타입은 하나로 묶어놓는것이 좋다.
+  예를 들면, `uint c; uint32 a; uint32 b;`라는 필드로 구성된 구조체가 `uint32 a; uint c; uint32 b;` 필드로 구성된 구조체보다 가스를 덜 소모한다.
+   `uint32` 필드가 묶여있기 때문.
+
+
+
+# Time Units
+
+> 시간 단위
+
+- 솔리디티는 시간을 다룰 수 있는 단위계를 기본적으로 제공
+- now 변수
+  - 현재의 유닉스 타임스탬프 값을 얻을 수 있다
+- seconds, minutes, hours, days, weeks, years 같은 시간 단위 또한 솔리디티에 포함
+  이들은 그에 해당하는 길이 만큼의 초 단위 uint 숫자로 변환된다. 
+  즉, 1 minutes는 60, 1hours는 3600(60초 * 60분), 1days 는 86400(24시간 * 60분 * 60초)
+
+```solidity
+uint lastUpdated;
+
+// `lastUpdated`를 `now`로 설정
+function updateTimestamp() public {
+  lastUpdated = now;
+}
+
+// 마지막으로 `updateTimestamp`가 호출된 뒤 5분이 지났으면 `true`를, 5분이 아직 지나지 않았으면 `false`를 반환
+function fiveMinutesHavePassed() public view returns (bool) {
+  return (now >= (lastUpdated + 5 minutes));
+}
+```
+
+
+
+# Cooldowns
+
+> 재사용 대기시간
+
+### Passing structs as arguments
+
+> 구조체를 인수로 전달하기
+
+- private 또는 internal함수에 인수로서 구조체의 storage 포인터를 전달 가능
+  예를 들어 함수들 간에 구조체를 주고 받을 때 유용
+
+```solidity
+function _doStuff(Zombie stoage _zombie) internal {
+// _zombie로 할 수 있는 것들을 처리
+}
+```
+
+- 이런 방식으로 함수에 id를 전달하고 좀비를 찾는 대신 좀비에 대한 참조를 전달 가능
+
+
+
+# Public Functions & Security
+
+> Public 함수 & 보안
+
+- 보안을 점검하는 좋은 방법은 모든 public과 external함수를 검사하고, 유저들이 그 함수들을 남용할 수 있는 방법을 생각해보는 것.
+  이 함수들이 onlyOwner 같은 제어자를 갖지 않는 이상, 어떤 사용자든 이 함수들을 호출하고 자신드링 원하는 모든 데이터를 함수에 전달할 수 있다.
+- 함수를 internal로 만들면 필요로 하는 함수에 대해서만 호출이 된다,
+
+
+
+# More on Function Modifier
+
+> 함수 제어자의 또 다른 특징
+
+### Function modifiers with aruments
+
+> 인수를 가지는 함수 제어자
+
+함수 제어자는 인수 또한 받을 수 있음
+
+```solidity
+// 사용자의 나이를 저장하기 위한 매핑
+mapping (uint => uint) public age;
+
+// 사용자가 특정 나이 이상인지 확인하는 제어자
+modifier olderThan(uint _age, uint _userId) {
+  require (age[_userId] >= _age);
+  _;
+}
+
+// 차를 운전하기 위햐서는 16살 이상이어야 함.
+// `olderThan` 제어자를 인수와 함께 호출하려면:
+function driveCar(uint _userId) public olderThan(16, _userId) {
+  // 필요한 함수 내용들
+}
+```
+
+- `olderthan` 제어자가 함수와 비슷하게 인수를 받는 것을 볼 수 있다. 그리고 `driveCar` 함수는 받은 인수를 제어자로 전달한다.
+
+
+
+# Saving Gas With 'View' Functions
+
+### View functions don't cost gas
+
+> View함수는 가스를 소모하지 않는다
+
+- view함수는 유저에 의해 외부에서 호출되었을 때 가스를 전혀 소모하지 않는다.
+  - view함수가 블록체인 상에서 실제로 어떤 것도 수정하지 않기 때문. 데이터를 읽기만 한다.
+  - 어떤 트랜젝션도 만들지 않는다.
+- 가스 사용을 최적화하는 비결은 가능한 모든 곳에 읽기 전용의 external view함수를 쓰는것이다.
+
+
+
+# Storage is Expensive
+
+- 솔리디티에서 비싼 연산 중 하나는 storage를 쓰는 것이다, 그중에서도 쓰기 연산
+  - 데이터의 일부를 쓰거나 바꿀 때마다, 블록체인에 영구적으로 기록되기 때문
+- 비용을 최소화하기 위해, 진짜 필요한 경우가 아니면 storage에 데이터를 쓰지 않는 것이 좋다.
+  - 어떤 배열에서 내용을 빠르게 찾기 위해, 단순히 변수에 저장하는 것 대신 함수가 호출될 때마다 배열으 ㄹmemory에 다시 만드는 것이 나을수도
+- 대부분의 언어에서는 큰 데이터 집합의 개별 데이터에 모두 접근하는 것은 비용이 비싸다. 하지만 솔리디티에서는 그 접근이 external view 함수라면 storage를 사용하는 것보다 더 저렴하다.
+
+### Declaring arrays in memory
+
+> 메모리에 배열 선언하기
+
+- Storage에 아무것도 쓰지 않고도 함수 안에 새로운 배열을 만들려면 배열에 memory 키워드를 스면 된다.
+- 이 배열은 함수가 끝날 대까지만 존재, storage의 배열을 직접 업데이트 하는 것보다 가스비가 훨씬 저렴
+
+```solidity
+function getArray() external pure returns(uint[]) {
+  // 메모리에 길이 3의 새로운 배열을 생성한다.
+  uint[] memory values = new uint[](3);
+  // 여기에 특정한 값들을 넣는다.
+  values.push(1);
+  values.push(2);
+  values.push(3);
+  // 해당 배열을 반환한다.
+  return values;
+}
+```
+
+- 메모리 배열은 반드시 길이 인수와 함께 생성되어야 한다. (위 예시에서는 3)
+  메모리 배열은 현재로서는 storage배열처럼 array.push()로 크기가 조절되지는 않는다.
+
+
+
+# For Loops
+
+view함수는 외부에서 호출도리 때 가스를 사용하지 않기 때문에, 함수에서 for반복문을 사용해서 모든 요소에 접근한 후 특정 사용자의 요소로 구성된 배열을 만들 수 있을 것이다. 그러고 나면 transfer함수는 훨씬 비용을 적게 쓰게 된다. (storage에서 어떤 배열도 재정렬할 필요가 없기 때문)
+
+### Using `for` Loops
+
+- 솔리디티에서 for반복문의 문법은 자바스크립트의 문법과 비슷
+- 아래는 짝수로 구성된 배열을 만드는 예시이다
+
+```solidity
+function getEvens() pure external returns(uint[]) {
+  uint[] memory evens = new uint[](5);
+  // 새로운 배열의 인덱스를 추적하는 변수
+  uint counter = 0;
+  // for 반복문에서 1부터 10까지 반복함
+  for (uint i = 1; i <= 10; i++) {
+    // `i`가 짝수라면...
+    if (i % 2 == 0) {
+      // 배열에 i를 추가함
+      evens[counter] = i;
+      // `evens`의 다음 빈 인덱스 값으로 counter를 증가시킴
+      counter++;
+    }
+  }
+  return evens;
+}
+```
+
