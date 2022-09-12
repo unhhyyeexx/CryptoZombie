@@ -983,3 +983,131 @@ function getEvens() pure external returns(uint[]) {
 }
 ```
 
+
+
+### Review Function Modifier
+
+1. 함수가 언제, 어디서 호출될 수 있는지 제어하는 **접근 제어자 (visibility modifier)**
+
+   - **private**은 컨트랙트 내부의 다른 함수들에서만 호출될 수 있다
+   - **internal**은 private과 비슷하지만, 해당 컨트랙트를 상속하는 컨트랙트에서도 호출될 수 있다.
+   - **external**은 오직 컨트랙트 외부에서만 호출될 수 있다.
+   - **public**은 내외부 모두에서, 어디서든 호출될 수 있다.
+
+2. 블록체인과 상호작용하는 방법에 대해 알려주는 **상태 제어자 (state modifier)**
+
+   - **view**는 해당함수를 실행해도 어떤 데이터도 저장/변경되지 않음을 알려준다.
+   - **pure**는 해당함수가 어떤 데이터도 블록체인에 저장하지 않을 뿐 아니라, 블록체인으로부터 어떤 데이터도 읽기 않음을 알려준다.
+   - 이들 모두 컨트랙트 외부에서 불렸을 때 가스를 전혀 소모하지 않는다. 다만 다른 함수에 의해 내부적으로 호출되었을때는 가스를 소모한다.
+
+3. 사용자 정의 제어자
+
+   1. onlyOwner, aboveLevel등과 같은 것들
+   2. 이런 제어자들을 사용하여 함수에 이 제어자들이 어떻게 영향을 줄 지 결정하는 우리만의 논리를 구성할 수 있다.
+
+4. 위 제어자들은 함수 하나에 다음처럼 함께 사용 가능
+
+   ```solidity
+   function test() external view onlyOwner anotherModifier {
+   
+   }
+   ```
+
+   
+
+# Payable modifier
+
+- 이더를 받을 수 있는 특별한 함수 유형
+- 일반적인 웹 서버에서 api함수를 실행할 때는, 함수호출을 통해서 돈이나 코인을 보낼 수 없다.
+- 반면 이더리움에서는, 이더, 데이터(tansaction payload), 컨트랙트 코드 자체 모두가 이더리움 위에 존재하기 때문에, 함수를 실행하는 동시에 컨트랙트에 돈을 지불하는 것이 가능하다.
+  => 함수를 실행하기 위해 컨트랙트에 일정 금액을 지불하게 하는 것과 같은 기능 구현 가능
+
+```solidity
+contract OnlineStore {
+  function buySomething() external payable {
+    // 함수 실행에 0.001이더가 보내졌는지 확실히 하기 위해 확인:
+    require(msg.value == 0.001 ether);
+    // 보내졌다면, 함수를 호출한 자에게 디지털 아이템을 전달하기 위한 내용 구성:
+    transferThing(msg.sender);
+  }
+}
+```
+
+- 위 예시에서 msg.value는 컨트랙트로 이더가 얼마나 보내졌는지 확인하는 방법, ether는 기본적으로 포함된 단위
+- 누군가 web3.js에서 다음과 같이 함수를 실행하면 액션
+
+```solidity
+// `OnlineStore`는 자네의 이더리움 상의 컨트랙트를 가리킨다고 가정:
+OnlineStore.buySomething({from: web3.eth.defaultAccount, value: web3.utils.toWei(0.001)})
+```
+
+- value필드를 보면, 자바스크립트 함수 호출에서 이 필드를 통해 ether를 얼마나 보낼지 결정한다.
+- 트랜잭션을 봉투로 생각하고 함수 호출에 전달하는 매개 변수를 편지내용이라고 생각한다면, value는 봉투 안에 현금을 넣는 것과 같다.
+- 만약 함수가 `payable`로 표시되지 않았는데 이더를 보내려고 한다면 함수에서 트랜잭션을 거부할 것이다.
+
+
+
+#  Withdraws
+
+> 출금
+
+이더를 인출하는 함수는 다음과 같이 작성한다,
+
+```solidity
+// Ownable 컨트랙트를 import 햇다고 가정하고 owner, onlyOwner 사용
+contract GetPaid is Ownable {
+	function withdraw() external onlyOwner {
+		owner.transfer(this.balance);
+	}
+}
+```
+
+- **transfer** 함수를 사용하여 이더를 특정 주소로 전달 가능
+
+- this.balance는 컨트랙트에 저장되어있는 전체 잔액을 반환한다.
+  100명의 유저가 이 컨트랙트에 1이더를 지불한다면 this.balance는 100이더가 된다.
+
+- transfer함수를 써서 특정한 이더리움 주소에 돈을 보낼 수도 있다.
+  예를 들어, 만약 누가 한 아이템에 대해 초과지불을 했다면 이더를 msg.sender로 되돌려주는 함수를 만들 수도 있다.
+
+  ```solidity
+  uint itemFee = 0.001 ether;
+  msg.sender.transfer(msg.value - itemFee);
+  ```
+
+
+
+# Random Numbers
+
+### Random number generation via keccak256
+
+솔리디티에서 keccak256 해시 함수를 사용하여 난수를 만드는 방식은 다음과 같다.
+
+```solidity
+// Generate a random number between 1 and 100:
+uint randNonce = 0;
+uint random = uint(keccak256(now, msg.sender, randNonce)) % 100;
+randNonce++;
+uint random2 = uint(keccak256(now, msg.sender, randNonce)) % 100;
+```
+
+- 이 예시에서는 now의 타임스탬프 값, msg.sender, 증가하는 nonce(딱 한 번만 사용되는 숫자, 즉, 똑같은 입력으로 두 번 이상 동일한 해시 함수를 실행할 수 없게 함)를 받는다.
+- 그리고 keccak을 사용하여 이 입력들을 임의의 해시값으로 변환하고, 변환한 해시값을 uint로 바꾼 후, %100을 써서 마지막 2자리 숫자만 받도록 한다.
+  이를 통해 0과 99 사이으이 완전한 난수를 얻는다.
+
+**This method is vulnerable to attack by a dishonest node**
+
+- 이더리움에서는 컨트랙트의 함수를 실행하면 트랜잭션(transaction)으로서 네트워크의 노드 하나 혹은 여러 노드에 실행을 알리게 된다. 
+  그 후 네트워크의 노드들은 여러 개의 트랜잭션을 모으고 Proof of Work(작업증명)으로 알려진 계산이 매우 복잡한 수학적 문제를 먼저 풀기 위한 시도를 하게 된다.
+  그리고서 해당 트랜잭션 그룹을 그들의 PoW와 함께 `Block`으로 네트워크에 배포한다.
+- 한 노드가 어떤 PoW를 풀면, 다른 노드들은 그 PoW를 풀려는 시도를 멈추고 해당 노드가 보낸 트랜잭션 목록이 유효한 것인지 검증한다.
+  유효하다면 해당 블록을 받아들이고 다음 블록을 풀기 시작한다.
+- 이것이 난수 함수를 취약하게  만드는데,
+  만약 내가 노드를 실행하고 있다면, 나는 오직 나의 노드에만 트랜잭션을 알리고 이것을 공유하지 않을 수도 있다.
+
+### So how do we generate random numbers safely in Ethereum?
+
+방법이 없진 않다. 아래 글 참고
+
+https://ethereum.stackexchange.com/questions/191/how-can-i-securely-generate-a-random-number-in-my-smart-contract
+
